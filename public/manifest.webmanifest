@@ -1,0 +1,10 @@
+{
+  "name": "FreeTour — Travel Like a Local",
+  "short_name": "FreeTour",
+  "description": "Find local guides and create personalized travel experiences.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#102b4e",
+  "icons": []
+}

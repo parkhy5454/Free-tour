@@ -1,0 +1,148 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum UserRole {
+  TRAVELER
+  GUIDE
+  ADMIN
+}
+
+enum RequestStatus {
+  OPEN
+  MATCHED
+  CANCELLED
+  COMPLETED
+}
+
+enum ProposalStatus {
+  PENDING
+  ACCEPTED
+  DECLINED
+}
+
+enum BookingStatus {
+  PENDING_PAYMENT
+  CONFIRMED
+  CANCELLED
+  COMPLETED
+  REFUNDED
+}
+
+enum PaymentStatus {
+  CREATED
+  PAID
+  FAILED
+  REFUND_PENDING
+  REFUNDED
+}
+
+model User {
+  id           String   @id @default(cuid())
+  name         String
+  email        String   @unique
+  passwordHash String
+  role         UserRole @default(TRAVELER)
+  country      String?
+  language     String   @default("ko")
+  createdAt    DateTime @default(now())
+  guideProfile GuideProfile?
+  tripRequests TripRequest[] @relation("TravelerRequests")
+  bookingsAsTraveler Booking[] @relation("TravelerBookings")
+  reviews Review[]
+}
+
+model GuideProfile {
+  id             String   @id @default(cuid())
+  userId         String   @unique
+  user           User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  headline       String
+  bio            String
+  country        String
+  city           String
+  languages      String[]
+  specialties    String[]
+  hourlyRate     Int      @default(50000)
+  currency       String   @default("KRW")
+  isPublished    Boolean  @default(true)
+  createdAt      DateTime @default(now())
+  proposals      GuideProposal[]
+  bookings       Booking[]
+}
+
+model TripRequest {
+  id          String        @id @default(cuid())
+  travelerId  String
+  traveler    User          @relation("TravelerRequests", fields: [travelerId], references: [id], onDelete: Cascade)
+  country     String
+  city        String
+  startDate   DateTime
+  hours       Int
+  partySize   Int           @default(1)
+  interests   String[]
+  details     String
+  budget      Int?
+  currency    String        @default("KRW")
+  status      RequestStatus @default(OPEN)
+  createdAt   DateTime      @default(now())
+  proposals   GuideProposal[]
+  booking     Booking?
+}
+
+model GuideProposal {
+  id           String         @id @default(cuid())
+  requestId    String
+  guideId      String
+  request      TripRequest    @relation(fields: [requestId], references: [id], onDelete: Cascade)
+  guide        GuideProfile   @relation(fields: [guideId], references: [id], onDelete: Cascade)
+  price        Int
+  currency     String         @default("KRW")
+  message      String
+  status       ProposalStatus @default(PENDING)
+  createdAt    DateTime       @default(now())
+  booking      Booking?
+  @@unique([requestId, guideId])
+}
+
+
+model Booking {
+  id             String        @id @default(cuid())
+  requestId      String        @unique
+  request        TripRequest   @relation(fields: [requestId], references: [id], onDelete: Restrict)
+  travelerId     String
+  traveler       User          @relation("TravelerBookings", fields: [travelerId], references: [id], onDelete: Restrict)
+  guideId        String
+  guide          GuideProfile  @relation(fields: [guideId], references: [id], onDelete: Restrict)
+  proposalId     String        @unique
+  proposal       GuideProposal @relation(fields: [proposalId], references: [id], onDelete: Restrict)
+  amount         Int
+  currency       String        @default("KRW")
+  platformRate   Float         @default(0.18)
+  platformFee    Int
+  guidePayout    Int
+  status         BookingStatus @default(PENDING_PAYMENT)
+  paymentStatus  PaymentStatus @default(CREATED)
+  paymentProvider String?
+  providerRef    String?
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+  review         Review?
+  @@index([travelerId, createdAt])
+  @@index([guideId, createdAt])
+}
+
+model Review {
+  id        String   @id @default(cuid())
+  bookingId String   @unique
+  booking   Booking  @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  authorId  String
+  author    User     @relation(fields: [authorId], references: [id], onDelete: Restrict)
+  rating    Int
+  comment   String   @db.VarChar(1500)
+  createdAt DateTime @default(now())
+}
