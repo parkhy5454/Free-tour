@@ -16,8 +16,7 @@ export async function Header() {
         <Link href="/guide/join">가이드 등록</Link>
         {session ? (
           <>
-            {session.role === "ADMIN" && <Link href="/admin">관리자</Link>}
-            <Link href="/profile">내 정보</Link>
+            <Link href="/settings">설정</Link>
             <Link href="/dashboard" className="nav-cta">대시보드</Link>
           </>
         ) : (
