@@ -42,6 +42,14 @@ enum PaymentStatus {
   REFUNDED
 }
 
+enum PickupStatus {
+  REQUESTED
+  ASSIGNED
+  IN_PROGRESS
+  COMPLETED
+  CANCELLED
+}
+
 model User {
   id           String   @id @default(cuid())
   name         String
@@ -55,6 +63,7 @@ model User {
   tripRequests TripRequest[] @relation("TravelerRequests")
   bookingsAsTraveler Booking[] @relation("TravelerBookings")
   reviews Review[]
+  pickupRequests PickupRequest[] @relation("TravelerPickups")
 }
 
 model GuideProfile {
@@ -132,8 +141,48 @@ model Booking {
   createdAt      DateTime      @default(now())
   updatedAt      DateTime      @updatedAt
   review         Review?
+  pickup         PickupRequest?
   @@index([travelerId, createdAt])
   @@index([guideId, createdAt])
+}
+
+model TransferPartner {
+  id        String          @id @default(cuid())
+  name      String
+  country   String
+  phone     String
+  email     String?
+  isActive  Boolean         @default(true)
+  createdAt DateTime        @default(now())
+  pickups   PickupRequest[]
+  @@index([country])
+}
+
+model PickupRequest {
+  id           String        @id @default(cuid())
+  bookingId    String        @unique
+  booking      Booking       @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  travelerId   String
+  traveler     User          @relation("TravelerPickups", fields: [travelerId], references: [id], onDelete: Cascade)
+  country      String
+  airport      String
+  flightNumber String
+  arrivalAt    DateTime
+  passengers   Int           @default(1)
+  luggageCount Int           @default(0)
+  pickupAddress String
+  note         String?
+  price        Int
+  currency     String
+  status       PickupStatus  @default(REQUESTED)
+  partnerId    String?
+  partner      TransferPartner? @relation(fields: [partnerId], references: [id], onDelete: SetNull)
+  driverName   String?
+  driverPhone  String?
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+  @@index([status, arrivalAt])
+  @@index([partnerId])
 }
 
 model Review {

@@ -1,7 +1,74 @@
 "use client";
 import { useState } from "react";
-export default function GuideJoin(){
- const [msg,setMsg]=useState(""); const [busy,setBusy]=useState(false);
- async function submit(e:React.FormEvent<HTMLFormElement>){e.preventDefault();setBusy(true);setMsg("");const data=Object.fromEntries(new FormData(e.currentTarget));const res=await fetch("/api/guides",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(data)});const j=await res.json();setBusy(false);if(res.ok){setMsg("가이드 프로필이 등록되었습니다. 공개 검색에서 확인할 수 있습니다.");e.currentTarget.reset();}else setMsg(j.error||"회원가입 후 가이드 프로필을 등록해 주세요.");}
- return <main className="page-shell narrow"><div className="page-title"><span className="eyebrow dark">SHARE YOUR CITY</span><h1>현지 가이드 등록</h1><p>당신만의 도시와 경험을 전 세계 여행자에게 소개하세요.</p></div><form className="form-card" onSubmit={submit}><div className="form-grid"><label>소개 제목<input name="headline" required placeholder="예: 서울 골목 맛집과 로컬 문화 전문가"/></label><label>국가<input name="country" required placeholder="South Korea"/></label><label>도시<input name="city" required placeholder="Seoul"/></label><label>시간당 요금<input name="hourlyRate" type="number" min="1" defaultValue="50000" required/></label><label>통화<select name="currency"><option>KRW</option><option>USD</option><option>EUR</option><option>JPY</option></select></label><label>사용 언어<input name="languages" required placeholder="Korean, English"/></label><label className="span-two">전문 분야<input name="specialties" required placeholder="Food, History, Photography"/></label><label className="span-two">자기소개<textarea name="bio" required minLength={20} rows={5} placeholder="여행자에게 제공할 수 있는 경험과 전문성을 소개해 주세요."/></label></div><button disabled={busy} className="button button-primary full">{busy?"등록 중...":"가이드 프로필 등록"}</button>{msg&&<p className="notice">{msg}</p>}</form></main>;
+import { COUNTRIES } from "@/lib/countries";
+
+export default function GuideJoin() {
+  const [msg, setMsg] = useState("");
+  const [busy, setBusy] = useState(false);
+
+  async function submit(e: React.FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    setBusy(true);
+    setMsg("");
+    const data = Object.fromEntries(new FormData(e.currentTarget));
+    const res = await fetch("/api/guides", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(data),
+    });
+    const j = await res.json();
+    setBusy(false);
+    if (res.ok) {
+      setMsg("가이드 프로필이 등록되었습니다. 공개 검색에서 확인할 수 있습니다.");
+      e.currentTarget.reset();
+    } else {
+      setMsg(j.error || "회원가입 후 가이드 프로필을 등록해 주세요.");
+    }
+  }
+
+  return (
+    <main className="page-shell narrow">
+      <div className="page-title">
+        <span className="eyebrow dark">SHARE YOUR CITY</span>
+        <h1>현지 가이드 등록</h1>
+        <p>당신만의 도시와 경험을 전 세계 여행자에게 소개하세요.</p>
+      </div>
+      <form className="form-card" onSubmit={submit}>
+        <div className="form-grid">
+          <label className="span-two">
+            소개 제목
+            <input name="headline" required placeholder="예: 서울 골목 맛집과 로컬 문화 전문가"/>
+          </label>
+          <label>
+            국가
+            <select name="country" required defaultValue="">
+              <option value="" disabled>국가를 선택하세요</option>
+              {COUNTRIES.map((c) => (
+                <option key={c.name} value={c.name}>{c.label} ({c.name})</option>
+              ))}
+            </select>
+          </label>
+          <label>도시<input name="city" required placeholder="Seoul"/></label>
+          <label>시간당 요금<input name="hourlyRate" type="number" min="1" defaultValue="50000" required/></label>
+          <label>
+            통화
+            <select name="currency">
+              <option>KRW</option>
+              <option>USD</option>
+              <option>EUR</option>
+              <option>JPY</option>
+            </select>
+          </label>
+          <label>사용 언어<input name="languages" required placeholder="Korean, English"/></label>
+          <label className="span-two">전문 분야<input name="specialties" required placeholder="Food, History, Photography"/></label>
+          <label className="span-two">
+            자기소개
+            <textarea name="bio" required minLength={20} rows={5} placeholder="여행자에게 제공할 수 있는 경험과 전문성을 소개해 주세요."/>
+          </label>
+        </div>
+        <button disabled={busy} className="button button-primary full">{busy ? "등록 중..." : "가이드 프로필 등록"}</button>
+        {msg && <p className="notice">{msg}</p>}
+      </form>
+    </main>
+  );
 }

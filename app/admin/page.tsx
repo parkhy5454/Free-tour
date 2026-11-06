@@ -3,6 +3,9 @@ import { redirect } from "next/navigation";
 import { getSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import "../admin-table.css";
+import { getCountry, countryLabel, formatInZone } from "@/lib/countries";
+import PickupAdminRow from "@/components/PickupAdminRow";
+import PartnerForm from "@/components/PartnerForm";
 
 export const dynamic = "force-dynamic";
 
@@ -16,6 +19,8 @@ const TABS = [
   { key: "proposals", label: "제안" },
   { key: "bookings", label: "예약" },
   { key: "reviews", label: "리뷰" },
+  { key: "pickups", label: "픽업" },
+  { key: "partners", label: "파트너" },
 ] as const;
 
 type TabKey = (typeof TABS)[number]["key"];
@@ -274,6 +279,98 @@ export default async function AdminPage({
           ))}
         </tbody>
       </TableWrap>
+    );
+  }
+
+  if (active === "pickups") {
+    const [rows, partners] = await Promise.all([
+      prisma.pickupRequest.findMany({
+        orderBy: { arrivalAt: "asc" },
+        take: LIMIT,
+        include: {
+          traveler: { select: { name: true, email: true } },
+        },
+      }),
+      prisma.transferPartner.findMany({
+        where: { isActive: true },
+        orderBy: { name: "asc" },
+        select: { id: true, name: true, country: true, phone: true },
+      }),
+    ]);
+    body = (
+      <TableWrap caption={`픽업 ${rows.length}건 (도착 임박순). 파트너와 기사를 배정하고 상태를 바꾼 뒤 저장하세요.`}>
+        <thead>
+          <tr>
+            <th>여행자</th><th>국가</th><th>공항 / 항공편</th><th>도착 (현지)</th><th>인원 / 짐</th>
+            <th>픽업 장소</th><th>요금</th><th>상태</th><th>파트너</th><th>기사 이름</th><th>기사 연락처</th><th>저장</th>
+          </tr>
+        </thead>
+        <tbody>
+          {rows.map((p) => {
+            const country = getCountry(p.country);
+            return (
+              <PickupAdminRow
+                key={p.id}
+                pickup={{
+                  id: p.id,
+                  travelerName: p.traveler.name,
+                  travelerEmail: p.traveler.email,
+                  country: countryLabel(p.country),
+                  airport: p.airport,
+                  flightNumber: p.flightNumber,
+                  arrivalLabel: formatInZone(p.arrivalAt, country?.timezone ?? "Asia/Seoul"),
+                  passengers: p.passengers,
+                  luggageCount: p.luggageCount,
+                  pickupAddress: p.pickupAddress,
+                  note: p.note,
+                  price: `${p.price.toLocaleString("ko-KR")} ${p.currency}`,
+                  status: p.status,
+                  partnerId: p.partnerId,
+                  driverName: p.driverName,
+                  driverPhone: p.driverPhone,
+                }}
+                partners={partners
+                  .filter((x) => x.country === p.country)
+                  .map((x) => ({ id: x.id, name: x.name, phone: x.phone }))}
+              />
+            );
+          })}
+        </tbody>
+      </TableWrap>
+    );
+  }
+
+  if (active === "partners") {
+    const partners = await prisma.transferPartner.findMany({
+      orderBy: [{ country: "asc" }, { name: "asc" }],
+    });
+    body = (
+      <>
+        <section className="dash-card" style={{ marginBottom: 20 }}>
+          <h2>파트너 등록</h2>
+          <p className="admin-note" style={{ marginTop: 0 }}>
+            국가별 공항 픽업 운송 업체를 등록합니다. 면허와 보험이 확인된 업체만 등록하세요.
+          </p>
+          <PartnerForm />
+        </section>
+        <TableWrap caption={`파트너 ${partners.length}곳`}>
+          <thead>
+            <tr><th>업체명</th><th>국가</th><th>연락처</th><th>이메일</th><th>상태</th><th>등록일</th></tr>
+          </thead>
+          <tbody>
+            {partners.map((x) => (
+              <tr key={x.id}>
+                <td>{x.name}</td>
+                <td>{countryLabel(x.country)}</td>
+                <td>{x.phone}</td>
+                <td>{x.email ?? "-"}</td>
+                <td>{x.isActive ? "활성" : "비활성"}</td>
+                <td>{fmtDate(x.createdAt)}</td>
+              </tr>
+            ))}
+          </tbody>
+        </TableWrap>
+      </>
     );
   }
 
