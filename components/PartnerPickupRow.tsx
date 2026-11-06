@@ -15,6 +15,7 @@ type Props = {
     note: string | null;
     driverName: string | null;
     driverPhone: string | null;
+    vehiclePlate: string | null;
   };
 };
 
@@ -29,6 +30,7 @@ export default function PartnerPickupRow({ pickup }: Props) {
   const [status, setStatus] = useState(pickup.status);
   const [driverName, setDriverName] = useState(pickup.driverName ?? "");
   const [driverPhone, setDriverPhone] = useState(pickup.driverPhone ?? "");
+  const [vehiclePlate, setVehiclePlate] = useState(pickup.vehiclePlate ?? "");
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState("");
 
@@ -41,7 +43,7 @@ export default function PartnerPickupRow({ pickup }: Props) {
       const res = await fetch(`/api/partner/pickups/${pickup.id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ status, driverName, driverPhone }),
+        body: JSON.stringify({ status, driverName, driverPhone, vehiclePlate }),
       });
       const json = await res.json().catch(() => ({}));
       if (!res.ok) {
@@ -78,12 +80,19 @@ export default function PartnerPickupRow({ pickup }: Props) {
           기사 이름
           <input value={driverName} disabled={busy || closed} onChange={(e) => setDriverName(e.target.value)} maxLength={60} />
         </label>
-        <label className="span-two">
+        <label>
           기사 연락처
           <input value={driverPhone} disabled={busy || closed} onChange={(e) => setDriverPhone(e.target.value)} maxLength={30} />
         </label>
+        <label>
+          차량 번호 (필수)
+          <input value={vehiclePlate} disabled={busy || closed} onChange={(e) => setVehiclePlate(e.target.value)} maxLength={20} placeholder="예: 12가 3456" />
+        </label>
       </div>
 
+      <p className="muted" style={{ fontSize: 12, marginTop: 8 }}>
+        차량 번호를 입력해야 "진행 중"으로 바꿀 수 있습니다. 여행자는 이 번호로 차량을 확인합니다.
+      </p>
       {!closed && (
         <button className="button button-primary" disabled={busy} onClick={save} style={{ marginTop: 12 }}>
           {busy ? "저장 중..." : "저장"}

@@ -7,6 +7,7 @@ const schema = z.object({
   status: z.enum(["IN_PROGRESS", "COMPLETED"]).optional(),
   driverName: z.string().trim().max(60).optional(),
   driverPhone: z.string().trim().max(30).optional(),
+  vehiclePlate: z.string().trim().max(20).optional(),
 });
 
 // 파트너: 본인 업체에 배정된 픽업의 진행 상태와 기사 정보를 수정합니다.
@@ -25,7 +26,7 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
   const { id } = await params;
   const pickup = await prisma.pickupRequest.findUnique({
     where: { id },
-    select: { id: true, partnerId: true, status: true },
+    select: { id: true, partnerId: true, status: true, vehiclePlate: true },
   });
   if (!pickup || pickup.partnerId !== partner.id) {
     return NextResponse.json({ error: "배정된 픽업이 아닙니다." }, { status: 403 });
@@ -42,12 +43,19 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
     return NextResponse.json({ error: message || "입력값을 확인해 주세요." }, { status: 400 });
   }
 
+  // 차량 번호는 여행자가 기사와 차량을 확인하는 용도이므로, 진행 중으로 바꾸기 전에 반드시 입력해야 합니다.
+  const plateAfter = data.vehiclePlate !== undefined ? data.vehiclePlate : pickup.vehiclePlate;
+  if (data.status === "IN_PROGRESS" && !plateAfter) {
+    return NextResponse.json({ error: "차량 번호를 입력해야 진행 중으로 바꿀 수 있습니다." }, { status: 400 });
+  }
+
   const updated = await prisma.pickupRequest.update({
     where: { id },
     data: {
       ...(data.status && { status: data.status }),
       ...(data.driverName !== undefined && { driverName: data.driverName || null }),
       ...(data.driverPhone !== undefined && { driverPhone: data.driverPhone || null }),
+      ...(data.vehiclePlate !== undefined && { vehiclePlate: data.vehiclePlate.toUpperCase() || null }),
     },
     select: { id: true, status: true },
   });

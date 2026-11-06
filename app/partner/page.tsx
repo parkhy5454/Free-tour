@@ -55,6 +55,7 @@ export default async function PartnerPage() {
     note: p.note,
     driverName: p.driverName,
     driverPhone: p.driverPhone,
+    vehiclePlate: p.vehiclePlate,
   }));
 
   return (
