@@ -59,7 +59,7 @@ export default async function BookingsPage() {
           bookings.map((b) => {
             const isTraveler = b.travelerId === user.id;
             const country = getCountry(b.request.country);
-            const canReview = isTraveler && b.status !== "CANCELLED" && !b.review;
+            const canReview = isTraveler && b.status === "COMPLETED" && !b.review;
             const canRequestPickup = isTraveler && b.status !== "CANCELLED" && !b.pickup && !!country;
             const p = b.pickup;
             const pickupCancellable = p && (p.status === "REQUESTED" || p.status === "ASSIGNED");

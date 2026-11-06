@@ -37,6 +37,9 @@ export async function POST(req: Request) {
   if (booking.status === "CANCELLED") {
     return NextResponse.json({ error: "취소된 예약에는 후기를 작성할 수 없습니다." }, { status: 400 });
   }
+  if (booking.status !== "COMPLETED") {
+    return NextResponse.json({ error: "여행이 완료된 후에 후기를 작성할 수 있습니다." }, { status: 400 });
+  }
   if (booking.review) {
     return NextResponse.json({ error: "이미 후기를 작성한 예약입니다." }, { status: 409 });
   }

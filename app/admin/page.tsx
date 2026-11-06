@@ -6,6 +6,7 @@ import "../admin-table.css";
 import { getCountry, countryLabel, formatInZone } from "@/lib/countries";
 import PickupAdminRow from "@/components/PickupAdminRow";
 import PartnerForm from "@/components/PartnerForm";
+import BookingStatusSelect from "@/components/BookingStatusSelect";
 
 export const dynamic = "force-dynamic";
 
@@ -243,7 +244,7 @@ export default async function AdminPage({
               <td>{fmtMoney(b.amount, b.currency)}</td>
               <td>{fmtMoney(b.platformFee, b.currency)}</td>
               <td>{fmtMoney(b.guidePayout, b.currency)}</td>
-              <td><span className="admin-badge">{b.status}</span></td>
+              <td><BookingStatusSelect bookingId={b.id} status={b.status} /></td>
               <td><span className="admin-badge">{b.paymentStatus}</span></td>
               <td>{b.review ? `★${b.review.rating}` : "-"}</td>
             </tr>
