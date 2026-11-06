@@ -2,7 +2,7 @@ import { redirect } from "next/navigation";
 import { getSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { getCountry } from "@/lib/countries";
-import { POINT_RULES } from "@/lib/points";
+import { KRW_PER_UNIT, priceInKrw } from "@/lib/points";
 import PickupForm from "@/components/PickupForm";
 
 export const dynamic = "force-dynamic";
@@ -36,7 +36,8 @@ export default async function NewPickupPage({
     where: { userId: session.id },
     _sum: { amount: true },
   });
-  const balance = sum._sum.amount ?? 0;
+  const balance = Math.max(0, sum._sum.amount ?? 0);
+  const priceKrw = priceInKrw(country.pickupPrice, country.currency) ?? 0;
 
   return (
     <main className="page-shell narrow">
@@ -51,8 +52,9 @@ export default async function NewPickupPage({
         price={country.pickupPrice}
         currency={country.currency}
         timezoneLabel={country.timezone}
-        balance={Math.max(0, balance)}
-        canUsePoints={country.currency === POINT_RULES.PICKUP_USE_CURRENCY}
+        balance={balance}
+        priceKrw={priceKrw}
+        krwPerUnit={KRW_PER_UNIT[country.currency] ?? 1}
       />
     </main>
   );

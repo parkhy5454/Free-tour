@@ -3,7 +3,7 @@ import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { getSession } from "@/lib/auth";
 import { getCountry, zonedLocalToUtc } from "@/lib/countries";
-import { POINT_RULES } from "@/lib/points";
+import { priceInKrw } from "@/lib/points";
 
 const createSchema = z.object({
   bookingId: z.string().min(1),
@@ -74,14 +74,16 @@ export async function POST(req: Request) {
       const balance = sum._sum.amount ?? 0;
 
       if (requestedPoints > 0) {
-        if (country.currency !== POINT_RULES.PICKUP_USE_CURRENCY) {
-          throw new PointError("이 국가의 픽업에서는 포인트를 사용할 수 없습니다.");
-        }
         if (requestedPoints > balance) {
           throw new PointError(`보유 포인트(${balance.toLocaleString("ko-KR")}P)를 초과해서 사용할 수 없습니다.`);
         }
-        if (requestedPoints > country.pickupPrice) {
-          throw new PointError("포인트는 픽업 요금을 넘을 수 없습니다.");
+        // 한도: 픽업 요금의 원화 환산액 (고정 환율 기준)
+        const priceKrw = priceInKrw(country.pickupPrice, country.currency);
+        if (priceKrw === null) {
+          throw new PointError("이 통화는 아직 포인트 환율이 설정되지 않았습니다.");
+        }
+        if (requestedPoints > priceKrw) {
+          throw new PointError(`포인트는 픽업 요금(약 ${priceKrw.toLocaleString("ko-KR")}원)을 넘을 수 없습니다.`);
         }
       }
 

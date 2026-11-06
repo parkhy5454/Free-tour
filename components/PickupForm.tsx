@@ -10,7 +10,8 @@ type Props = {
   currency: string;
   timezoneLabel: string;
   balance: number;
-  canUsePoints: boolean;
+  priceKrw: number; // 픽업 요금의 원화 환산액 (포인트 한도)
+  krwPerUnit: number; // 현지 통화 1단위 = 몇 원 (고정 환율)
 };
 
 export default function PickupForm({
@@ -20,13 +21,16 @@ export default function PickupForm({
   currency,
   timezoneLabel,
   balance,
-  canUsePoints,
+  priceKrw,
+  krwPerUnit,
 }: Props) {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
-  const maxPoints = canUsePoints ? Math.min(balance, price) : 0;
+  const maxPoints = Math.min(balance, priceKrw);
   const [points, setPoints] = useState(0);
-  const payable = Math.max(0, price - points);
+  // 사용한 포인트(원) 만큼 현지 통화 결제 금액을 차감 (올림)
+  const deductLocal = Math.ceil(points / krwPerUnit);
+  const payable = Math.max(0, price - deductLocal);
 
   async function submit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -42,7 +46,7 @@ export default function PickupForm({
       luggageCount: fd.get("luggageCount"),
       pickupAddress: fd.get("pickupAddress"),
       note: fd.get("note") || undefined,
-      usePoints: canUsePoints ? points : 0,
+      usePoints: points,
     };
     try {
       const res = await fetch("/api/pickups", {
@@ -68,37 +72,42 @@ export default function PickupForm({
       <p className="muted" style={{ margin: 0 }}>{placeLabel}</p>
       <p style={{ margin: "8px 0 0", fontWeight: 700 }}>
         픽업 요금: {price.toLocaleString("ko-KR")} {currency}
+        {currency !== "KRW" && (
+          <span className="muted" style={{ fontWeight: 400, fontSize: 12 }}>
+            {" "}(약 {priceKrw.toLocaleString("ko-KR")}원)
+          </span>
+        )}
       </p>
 
-      {canUsePoints ? (
-        <div style={{ marginTop: 14, padding: 14, background: "var(--paper)", borderRadius: 10 }}>
-          <p className="muted" style={{ margin: 0, fontSize: 12 }}>
-            보유 포인트 {balance.toLocaleString("ko-KR")}P (1P = 1원)
-          </p>
-          <label style={{ marginTop: 8 }}>
-            사용할 포인트
-            <input
-              type="number"
-              min={0}
-              max={maxPoints}
-              step={100}
-              value={points}
-              onChange={(e) => {
-                const v = Math.floor(Number(e.target.value) || 0);
-                setPoints(Math.min(Math.max(0, v), maxPoints));
-              }}
-            />
-          </label>
-          <p style={{ margin: "8px 0 0", fontSize: 13 }}>
-            결제 예정 금액: <b>{payable.toLocaleString("ko-KR")} {currency}</b>
-          </p>
-          {balance === 0 && <p className="muted" style={{ margin: "6px 0 0", fontSize: 12 }}>사용할 수 있는 포인트가 없습니다.</p>}
-        </div>
-      ) : (
-        <p className="muted" style={{ fontSize: 12, marginTop: 10 }}>
-          이 국가의 픽업에서는 포인트를 사용할 수 없습니다.
+      <div style={{ marginTop: 14, padding: 14, background: "var(--paper)", borderRadius: 10 }}>
+        <p className="muted" style={{ margin: 0, fontSize: 12 }}>
+          보유 포인트 {balance.toLocaleString("ko-KR")}P (1P = 1원 · 사용 가능 한도 {maxPoints.toLocaleString("ko-KR")}P)
         </p>
-      )}
+        <label style={{ marginTop: 8 }}>
+          사용할 포인트
+          <input
+            type="number"
+            min={0}
+            max={maxPoints}
+            step={100}
+            value={points}
+            disabled={maxPoints === 0}
+            onChange={(e) => {
+              const v = Math.floor(Number(e.target.value) || 0);
+              setPoints(Math.min(Math.max(0, v), maxPoints));
+            }}
+          />
+        </label>
+        <p style={{ margin: "8px 0 0", fontSize: 13 }}>
+          결제 예정 금액: <b>{payable.toLocaleString("ko-KR")} {currency}</b>
+          {points > 0 && (
+            <span className="muted"> (포인트 {points.toLocaleString("ko-KR")}P 차감{currency !== "KRW" ? `, 약 ${deductLocal.toLocaleString("ko-KR")} ${currency}` : ""})</span>
+          )}
+        </p>
+        {maxPoints === 0 && (
+          <p className="muted" style={{ margin: "6px 0 0", fontSize: 12 }}>사용할 수 있는 포인트가 없습니다.</p>
+        )}
+      </div>
 
       <div className="form-grid" style={{ marginTop: 22 }}>
         <label className="span-two">
