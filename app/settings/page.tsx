@@ -27,6 +27,11 @@ export default async function SettingsPage() {
           <p className="muted" style={{ margin: "6px 0 0" }}>내 여행 요청과 가이드 활동을 확인합니다.</p>
         </Link>
 
+        <Link href="/partner" className="dash-card" style={{ display: "block" }}>
+          <b>파트너 센터</b>
+          <p className="muted" style={{ margin: "6px 0 0" }}>픽업 운송 업체로 신청하고, 배정된 픽업을 관리합니다.</p>
+        </Link>
+
         {isAdmin && (
           <Link href="/admin" className="dash-card" style={{ display: "block" }}>
             <b>관리자 대시보드</b>

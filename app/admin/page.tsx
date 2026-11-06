@@ -7,6 +7,7 @@ import { getCountry, countryLabel, formatInZone } from "@/lib/countries";
 import PickupAdminRow from "@/components/PickupAdminRow";
 import PartnerForm from "@/components/PartnerForm";
 import BookingStatusSelect from "@/components/BookingStatusSelect";
+import PartnerActiveToggle from "@/components/PartnerActiveToggle";
 
 export const dynamic = "force-dynamic";
 
@@ -356,7 +357,7 @@ export default async function AdminPage({
         </section>
         <TableWrap caption={`파트너 ${partners.length}곳`}>
           <thead>
-            <tr><th>업체명</th><th>국가</th><th>연락처</th><th>이메일</th><th>상태</th><th>등록일</th></tr>
+            <tr><th>업체명</th><th>국가</th><th>연락처</th><th>이메일</th><th>상태</th><th>등록일</th><th>관리</th></tr>
           </thead>
           <tbody>
             {partners.map((x) => (
@@ -365,8 +366,9 @@ export default async function AdminPage({
                 <td>{countryLabel(x.country)}</td>
                 <td>{x.phone}</td>
                 <td>{x.email ?? "-"}</td>
-                <td>{x.isActive ? "활성" : "비활성"}</td>
+                <td>{x.isActive ? "활성" : x.userId ? "승인 대기" : "비활성"}</td>
                 <td>{fmtDate(x.createdAt)}</td>
+                <td><PartnerActiveToggle partnerId={x.id} isActive={x.isActive} /></td>
               </tr>
             ))}
           </tbody>
