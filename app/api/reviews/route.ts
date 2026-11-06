@@ -3,6 +3,7 @@ import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { getSession } from "@/lib/auth";
 import { POINT_RULES } from "@/lib/points";
+import { completedTripCount, tierForTrips } from "@/lib/membership";
 
 const reviewSchema = z.object({
   bookingId: z.string().min(1),
@@ -56,10 +57,13 @@ export async function POST(req: Request) {
         },
         select: { id: true },
       });
+      // 등급에 따라 후기 적립 포인트가 달라집니다 (lib/membership.ts).
+      const trips = await completedTripCount(session.id, tx);
+      const tier = tierForTrips(trips);
       await tx.pointLedger.create({
         data: {
           userId: session.id,
-          amount: POINT_RULES.REVIEW_REWARD,
+          amount: Math.round(POINT_RULES.REVIEW_REWARD * tier.reviewMultiplier),
           reason: "REVIEW_REWARD",
           bookingId: booking.id,
           note: "후기 작성 적립",

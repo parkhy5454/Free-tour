@@ -5,6 +5,7 @@ import { prisma } from "@/lib/prisma";
 import ProfileForm from "@/components/ProfileForm";
 import LogoutButton from "@/components/LogoutButton";
 import { POINT_RULES, POINT_REASON_LABEL } from "@/lib/points";
+import { completedTripCount, tierForTrips, nextTierInfo } from "@/lib/membership";
 
 export const dynamic = "force-dynamic";
 
@@ -23,6 +24,10 @@ export default async function ProfilePage() {
     include: { guideProfile: true },
   });
   if (!user) redirect("/login");
+
+  const tripCount = await completedTripCount(user.id);
+  const tier = tierForTrips(tripCount);
+  const nextTier = nextTierInfo(tripCount);
 
   const [pointSum, pointHistory] = await Promise.all([
     prisma.pointLedger.aggregate({ where: { userId: user.id }, _sum: { amount: true } }),
@@ -105,6 +110,22 @@ export default async function ProfilePage() {
           </div>
         </section>
       </div>
+
+      <section className="dash-card" style={{ marginTop: 20 }}>
+        <h2>멤버십</h2>
+        <p style={{ fontSize: 22, fontWeight: 800, color: "var(--navy)", margin: "8px 0 4px" }}>
+          {tier.name} 등급
+        </p>
+        <p className="muted">
+          완료된 여행 {tripCount}회
+          {nextTier
+            ? ` · ${nextTier.next.name} 등급까지 ${nextTier.remaining}회 남았습니다.`
+            : " · 최고 등급입니다."}
+        </p>
+        <p className="muted" style={{ fontSize: 13 }}>
+          등급이 높을수록 후기 적립 포인트가 늘어납니다. (현재 후기 적립 {Math.round(POINT_RULES.REVIEW_REWARD * tier.reviewMultiplier).toLocaleString("ko-KR")}P)
+        </p>
+      </section>
 
       <section className="dash-card" style={{ marginTop: 20 }}>
         <h2>포인트</h2>

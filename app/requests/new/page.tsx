@@ -1,8 +1,23 @@
 "use client";
-import { useState } from "react";
+import { Suspense, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import { COUNTRIES } from "@/lib/countries";
 
+// 주소창의 ?country=&city= 값으로 이전 여행지를 미리 채웁니다 (재예약용).
 export default function NewRequest() {
+  return (
+    <Suspense fallback={null}>
+      <NewRequestForm />
+    </Suspense>
+  );
+}
+
+function NewRequestForm() {
+  const searchParams = useSearchParams();
+  const presetCountry = COUNTRIES.some((c) => c.name === searchParams.get("country"))
+    ? (searchParams.get("country") as string)
+    : "";
+  const presetCity = searchParams.get("city") ?? "";
   const [msg, setMsg] = useState("");
   const [busy, setBusy] = useState(false);
 
@@ -37,14 +52,14 @@ export default function NewRequest() {
         <div className="form-grid">
           <label>
             국가
-            <select name="country" required defaultValue="">
+            <select name="country" required defaultValue={presetCountry}>
               <option value="" disabled>국가를 선택하세요</option>
               {COUNTRIES.map((c) => (
                 <option key={c.name} value={c.name}>{c.label} ({c.name})</option>
               ))}
             </select>
           </label>
-          <label>도시<input name="city" required placeholder="Tokyo"/></label>
+          <label>도시<input name="city" required placeholder="Tokyo" defaultValue={presetCity}/></label>
           <label>여행 시작일<input name="startDate" type="date" required/></label>
           <label>
             이용 시간

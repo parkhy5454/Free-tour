@@ -101,6 +101,14 @@ export default async function BookingsPage() {
                     {canReview && (
                       <Link href={`/reviews/new?bookingId=${b.id}`} className="text-link">후기 작성 →</Link>
                     )}
+                    {isTraveler && b.status === "COMPLETED" && (
+                      <Link
+                        href={`/requests/new?country=${encodeURIComponent(b.request.country)}&city=${encodeURIComponent(b.request.city)}`}
+                        className="text-link"
+                      >
+                        같은 여행지로 다시 예약 →
+                      </Link>
+                    )}
                   </div>
                 </div>
                 <span>{b.status} / {b.paymentStatus}</span>
