@@ -323,7 +323,7 @@ export default async function AdminPage({
                   luggageCount: p.luggageCount,
                   pickupAddress: p.pickupAddress,
                   note: p.note,
-                  price: `${p.price.toLocaleString("ko-KR")} ${p.currency}`,
+                  price: `${p.price.toLocaleString("ko-KR")} ${p.currency}${p.pointsUsed > 0 ? ` (포인트 -${p.pointsUsed.toLocaleString("ko-KR")}P)` : ""}`,
                   status: p.status,
                   partnerId: p.partnerId,
                   driverName: p.driverName,

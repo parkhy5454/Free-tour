@@ -9,11 +9,24 @@ type Props = {
   price: number;
   currency: string;
   timezoneLabel: string;
+  balance: number;
+  canUsePoints: boolean;
 };
 
-export default function PickupForm({ bookingId, placeLabel, price, currency, timezoneLabel }: Props) {
+export default function PickupForm({
+  bookingId,
+  placeLabel,
+  price,
+  currency,
+  timezoneLabel,
+  balance,
+  canUsePoints,
+}: Props) {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
+  const maxPoints = canUsePoints ? Math.min(balance, price) : 0;
+  const [points, setPoints] = useState(0);
+  const payable = Math.max(0, price - points);
 
   async function submit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -29,6 +42,7 @@ export default function PickupForm({ bookingId, placeLabel, price, currency, tim
       luggageCount: fd.get("luggageCount"),
       pickupAddress: fd.get("pickupAddress"),
       note: fd.get("note") || undefined,
+      usePoints: canUsePoints ? points : 0,
     };
     try {
       const res = await fetch("/api/pickups", {
@@ -55,6 +69,36 @@ export default function PickupForm({ bookingId, placeLabel, price, currency, tim
       <p style={{ margin: "8px 0 0", fontWeight: 700 }}>
         픽업 요금: {price.toLocaleString("ko-KR")} {currency}
       </p>
+
+      {canUsePoints ? (
+        <div style={{ marginTop: 14, padding: 14, background: "var(--paper)", borderRadius: 10 }}>
+          <p className="muted" style={{ margin: 0, fontSize: 12 }}>
+            보유 포인트 {balance.toLocaleString("ko-KR")}P (1P = 1원)
+          </p>
+          <label style={{ marginTop: 8 }}>
+            사용할 포인트
+            <input
+              type="number"
+              min={0}
+              max={maxPoints}
+              step={100}
+              value={points}
+              onChange={(e) => {
+                const v = Math.floor(Number(e.target.value) || 0);
+                setPoints(Math.min(Math.max(0, v), maxPoints));
+              }}
+            />
+          </label>
+          <p style={{ margin: "8px 0 0", fontSize: 13 }}>
+            결제 예정 금액: <b>{payable.toLocaleString("ko-KR")} {currency}</b>
+          </p>
+          {balance === 0 && <p className="muted" style={{ margin: "6px 0 0", fontSize: 12 }}>사용할 수 있는 포인트가 없습니다.</p>}
+        </div>
+      ) : (
+        <p className="muted" style={{ fontSize: 12, marginTop: 10 }}>
+          이 국가의 픽업에서는 포인트를 사용할 수 없습니다.
+        </p>
+      )}
 
       <div className="form-grid" style={{ marginTop: 22 }}>
         <label className="span-two">
@@ -88,7 +132,7 @@ export default function PickupForm({ bookingId, placeLabel, price, currency, tim
       </div>
 
       <p className="muted" style={{ fontSize: 12, marginTop: 10 }}>
-        도착 시각은 공항이 있는 국가의 현지 시간 기준입니다. 항공편이 지연되면 파트너가 실시간 항공 정보를 확인해 대응합니다.
+        도착 시각은 공항이 있는 국가의 현지 시간 기준입니다. 항공편이 지연되면 파트너가 실시간 항공 정보를 확인해 대응합니다. 픽업을 취소하면 사용한 포인트는 돌려드립니다.
       </p>
 
       {error && <p className="error">{error}</p>}

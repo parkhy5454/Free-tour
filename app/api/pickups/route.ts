@@ -3,6 +3,7 @@ import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { getSession } from "@/lib/auth";
 import { getCountry, zonedLocalToUtc } from "@/lib/countries";
+import { POINT_RULES } from "@/lib/points";
 
 const createSchema = z.object({
   bookingId: z.string().min(1),
@@ -14,7 +15,11 @@ const createSchema = z.object({
   luggageCount: z.coerce.number().int().min(0).max(30),
   pickupAddress: z.string().trim().min(5, "픽업 장소(호텔 주소 등)를 입력해 주세요.").max(300),
   note: z.string().trim().max(500).optional(),
+  usePoints: z.coerce.number().int().min(0, "사용할 포인트는 0 이상이어야 합니다.").optional(),
 });
+
+// 트랜잭션 안에서 발생한 검증 오류 (사용자에게 그대로 보여 줌)
+class PointError extends Error {}
 
 // 여행자가 자신의 예약에 공항 픽업을 신청합니다. 예약당 1건만 가능합니다.
 export async function POST(req: Request) {
@@ -60,26 +65,64 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "도착 일시를 올바르게 입력해 주세요." }, { status: 400 });
   }
 
+  const requestedPoints = data.usePoints ?? 0;
+
   try {
-    const pickup = await prisma.pickupRequest.create({
-      data: {
-        bookingId: booking.id,
-        travelerId: session.id,
-        country: country.name,
-        airport: data.airport,
-        flightNumber: data.flightNumber.toUpperCase(),
-        arrivalAt,
-        passengers: data.passengers,
-        luggageCount: data.luggageCount,
-        pickupAddress: data.pickupAddress,
-        note: data.note || null,
-        price: country.pickupPrice,
-        currency: country.currency,
-      },
-      select: { id: true },
+    const pickup = await prisma.$transaction(async (tx) => {
+      // 보유 포인트는 트랜잭션 안에서 다시 계산합니다.
+      const sum = await tx.pointLedger.aggregate({ where: { userId: session.id }, _sum: { amount: true } });
+      const balance = sum._sum.amount ?? 0;
+
+      if (requestedPoints > 0) {
+        if (country.currency !== POINT_RULES.PICKUP_USE_CURRENCY) {
+          throw new PointError("이 국가의 픽업에서는 포인트를 사용할 수 없습니다.");
+        }
+        if (requestedPoints > balance) {
+          throw new PointError(`보유 포인트(${balance.toLocaleString("ko-KR")}P)를 초과해서 사용할 수 없습니다.`);
+        }
+        if (requestedPoints > country.pickupPrice) {
+          throw new PointError("포인트는 픽업 요금을 넘을 수 없습니다.");
+        }
+      }
+
+      const created = await tx.pickupRequest.create({
+        data: {
+          bookingId: booking.id,
+          travelerId: session.id,
+          country: country.name,
+          airport: data.airport,
+          flightNumber: data.flightNumber.toUpperCase(),
+          arrivalAt,
+          passengers: data.passengers,
+          luggageCount: data.luggageCount,
+          pickupAddress: data.pickupAddress,
+          note: data.note || null,
+          price: country.pickupPrice,
+          currency: country.currency,
+          pointsUsed: requestedPoints,
+        },
+        select: { id: true },
+      });
+
+      if (requestedPoints > 0) {
+        await tx.pointLedger.create({
+          data: {
+            userId: session.id,
+            amount: -requestedPoints,
+            reason: "PICKUP_PAYMENT",
+            bookingId: booking.id,
+            note: `공항 픽업 요금 사용 (${country.label})`,
+          },
+        });
+      }
+      return created;
     });
+
     return NextResponse.json({ ok: true, id: pickup.id });
   } catch (e: unknown) {
+    if (e instanceof PointError) {
+      return NextResponse.json({ error: e.message }, { status: 400 });
+    }
     if ((e as { code?: string })?.code === "P2002") {
       return NextResponse.json({ error: "이미 픽업을 신청한 예약입니다." }, { status: 409 });
     }

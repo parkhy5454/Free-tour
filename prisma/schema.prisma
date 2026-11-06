@@ -188,6 +188,7 @@ model PickupRequest {
   note         String?
   price        Int
   currency     String
+  pointsUsed   Int           @default(0)
   status       PickupStatus  @default(REQUESTED)
   partnerId    String?
   partner      TransferPartner? @relation(fields: [partnerId], references: [id], onDelete: SetNull)

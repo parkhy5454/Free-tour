@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 import { getSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { getCountry } from "@/lib/countries";
+import { POINT_RULES } from "@/lib/points";
 import PickupForm from "@/components/PickupForm";
 
 export const dynamic = "force-dynamic";
@@ -31,6 +32,12 @@ export default async function NewPickupPage({
   const country = getCountry(booking.request.country);
   if (!country) redirect("/bookings");
 
+  const sum = await prisma.pointLedger.aggregate({
+    where: { userId: session.id },
+    _sum: { amount: true },
+  });
+  const balance = sum._sum.amount ?? 0;
+
   return (
     <main className="page-shell narrow">
       <span className="eyebrow dark">AIRPORT PICKUP</span>
@@ -44,6 +51,8 @@ export default async function NewPickupPage({
         price={country.pickupPrice}
         currency={country.currency}
         timezoneLabel={country.timezone}
+        balance={Math.max(0, balance)}
+        canUsePoints={country.currency === POINT_RULES.PICKUP_USE_CURRENCY}
       />
     </main>
   );

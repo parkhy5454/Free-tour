@@ -23,7 +23,7 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
   const { id } = await params;
   const pickup = await prisma.pickupRequest.findUnique({
     where: { id },
-    select: { id: true, travelerId: true, country: true, status: true },
+    select: { id: true, bookingId: true, travelerId: true, country: true, status: true, pointsUsed: true },
   });
   if (!pickup) return NextResponse.json({ error: "픽업 신청을 찾을 수 없습니다." }, { status: 404 });
 
@@ -51,16 +51,12 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
     const nextStatus =
       d.status ?? (d.partnerId && pickup.status === "REQUESTED" ? "ASSIGNED" : undefined);
 
-    const updated = await prisma.pickupRequest.update({
-      where: { id },
-      data: {
-        ...(d.partnerId !== undefined && { partnerId: d.partnerId }),
-        ...(d.driverName !== undefined && { driverName: d.driverName || null }),
-        ...(d.driverPhone !== undefined && { driverPhone: d.driverPhone || null }),
-        ...(nextStatus && { status: nextStatus }),
-      },
-      select: { id: true, status: true },
-    });
+    const updated = await updatePickup(pickup, {
+      ...(d.partnerId !== undefined && { partnerId: d.partnerId }),
+      ...(d.driverName !== undefined && { driverName: d.driverName || null }),
+      ...(d.driverPhone !== undefined && { driverPhone: d.driverPhone || null }),
+      ...(nextStatus && { status: nextStatus }),
+    }, nextStatus);
     return NextResponse.json({ ok: true, pickup: updated });
   }
 
@@ -76,10 +72,35 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
     return NextResponse.json({ error: "진행 중이거나 완료된 픽업은 취소할 수 없습니다. 고객센터에 문의해 주세요." }, { status: 400 });
   }
 
-  const updated = await prisma.pickupRequest.update({
-    where: { id },
-    data: { status: "CANCELLED" },
-    select: { id: true, status: true },
-  });
+  const updated = await updatePickup(pickup, { status: "CANCELLED" }, "CANCELLED");
   return NextResponse.json({ ok: true, pickup: updated });
+}
+
+// 픽업 수정. 취소로 바뀌면서 포인트를 사용했다면 같은 트랜잭션에서 환급합니다.
+async function updatePickup(
+  pickup: { id: string; bookingId: string; status: string; pointsUsed: number; travelerId: string },
+  data: Record<string, unknown>,
+  nextStatus: string | undefined
+) {
+  return prisma.$transaction(async (tx) => {
+    const updated = await tx.pickupRequest.update({
+      where: { id: pickup.id },
+      data,
+      select: { id: true, status: true },
+    });
+
+    const becameCancelled = nextStatus === "CANCELLED" && pickup.status !== "CANCELLED";
+    if (becameCancelled && pickup.pointsUsed > 0) {
+      await tx.pointLedger.create({
+        data: {
+          userId: pickup.travelerId,
+          amount: pickup.pointsUsed,
+          reason: "PICKUP_REFUND",
+          bookingId: pickup.bookingId,
+          note: "공항 픽업 취소로 사용 포인트 환급",
+        },
+      });
+    }
+    return updated;
+  });
 }
