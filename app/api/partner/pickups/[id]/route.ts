@@ -8,6 +8,7 @@ const schema = z.object({
   driverName: z.string().trim().max(60).optional(),
   driverPhone: z.string().trim().max(30).optional(),
   vehiclePlate: z.string().trim().max(20).optional(),
+  vehicleSeats: z.coerce.number().int().min(1, "탑승 가능 인원은 1명 이상입니다.").max(30).optional(),
 });
 
 // 파트너: 본인 업체에 배정된 픽업의 진행 상태와 기사 정보를 수정합니다.
@@ -26,7 +27,7 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
   const { id } = await params;
   const pickup = await prisma.pickupRequest.findUnique({
     where: { id },
-    select: { id: true, partnerId: true, status: true, vehiclePlate: true },
+    select: { id: true, partnerId: true, status: true, vehiclePlate: true, vehicleSeats: true, passengers: true },
   });
   if (!pickup || pickup.partnerId !== partner.id) {
     return NextResponse.json({ error: "배정된 픽업이 아닙니다." }, { status: 403 });
@@ -45,8 +46,27 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
 
   // 차량 번호는 여행자가 기사와 차량을 확인하는 용도이므로, 진행 중으로 바꾸기 전에 반드시 입력해야 합니다.
   const plateAfter = data.vehiclePlate !== undefined ? data.vehiclePlate : pickup.vehiclePlate;
-  if (data.status === "IN_PROGRESS" && !plateAfter) {
-    return NextResponse.json({ error: "차량 번호를 입력해야 진행 중으로 바꿀 수 있습니다." }, { status: 400 });
+  const seatsAfter = data.vehicleSeats !== undefined ? data.vehicleSeats : pickup.vehicleSeats;
+  if (data.status === "IN_PROGRESS") {
+    if (!plateAfter) {
+      return NextResponse.json({ error: "차량 번호를 입력해야 진행 중으로 바꿀 수 있습니다." }, { status: 400 });
+    }
+    if (!seatsAfter) {
+      return NextResponse.json({ error: "탑승 가능 인원을 입력해야 진행 중으로 바꿀 수 있습니다." }, { status: 400 });
+    }
+    if (seatsAfter < pickup.passengers) {
+      return NextResponse.json(
+        { error: `이 차량은 ${seatsAfter}명까지 탑승할 수 있지만, 여행자 인원은 ${pickup.passengers}명입니다. 더 큰 차량을 배정해 주세요.` },
+        { status: 400 }
+      );
+    }
+  }
+  // 탑승 인원이 여행자 인원보다 적으면 차량 정보를 저장하지 않습니다.
+  if (data.vehicleSeats !== undefined && data.vehicleSeats < pickup.passengers) {
+    return NextResponse.json(
+      { error: `여행자 인원(${pickup.passengers}명)보다 탑승 가능 인원이 적습니다. 차량을 확인해 주세요.` },
+      { status: 400 }
+    );
   }
 
   const updated = await prisma.pickupRequest.update({
@@ -56,6 +76,7 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
       ...(data.driverName !== undefined && { driverName: data.driverName || null }),
       ...(data.driverPhone !== undefined && { driverPhone: data.driverPhone || null }),
       ...(data.vehiclePlate !== undefined && { vehiclePlate: data.vehiclePlate.toUpperCase() || null }),
+      ...(data.vehicleSeats !== undefined && { vehicleSeats: data.vehicleSeats }),
     },
     select: { id: true, status: true },
   });

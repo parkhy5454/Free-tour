@@ -198,6 +198,7 @@ model PickupRequest {
   driverName   String?
   driverPhone  String?
   vehiclePlate String?
+  vehicleSeats Int?
   createdAt    DateTime      @default(now())
   updatedAt    DateTime      @updatedAt
   @@index([status, arrivalAt])

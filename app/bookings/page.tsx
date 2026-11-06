@@ -38,6 +38,7 @@ export default async function BookingsPage() {
           driverName: true,
           driverPhone: true,
           vehiclePlate: true,
+          vehicleSeats: true,
           partner: { select: { name: true, phone: true } },
         },
       },
@@ -82,7 +83,7 @@ export default async function BookingsPage() {
                       {p.partner && (
                         <p className="muted">
                           운송 파트너: {p.partner.name} ({p.partner.phone})
-                          {p.driverName && ` · 기사 ${p.driverName}${p.driverPhone ? ` ${p.driverPhone}` : ""}`}{p.vehiclePlate && ` · 차량 ${p.vehiclePlate}`}
+                          {p.driverName && ` · 기사 ${p.driverName}${p.driverPhone ? ` ${p.driverPhone}` : ""}`}{p.vehiclePlate && ` · 차량 ${p.vehiclePlate}`}{p.vehicleSeats && ` · 탑승 가능 ${p.vehicleSeats}명`}
                         </p>
                       )}
                       {isTraveler && pickupCancellable && <PickupCancelButton pickupId={p.id} />}
