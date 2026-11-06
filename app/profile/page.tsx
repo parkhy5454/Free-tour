@@ -4,6 +4,7 @@ import { getSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import ProfileForm from "@/components/ProfileForm";
 import LogoutButton from "@/components/LogoutButton";
+import { POINT_RULES, POINT_REASON_LABEL } from "@/lib/points";
 
 export const dynamic = "force-dynamic";
 
@@ -22,6 +23,16 @@ export default async function ProfilePage() {
     include: { guideProfile: true },
   });
   if (!user) redirect("/login");
+
+  const [pointSum, pointHistory] = await Promise.all([
+    prisma.pointLedger.aggregate({ where: { userId: user.id }, _sum: { amount: true } }),
+    prisma.pointLedger.findMany({
+      where: { userId: user.id },
+      orderBy: { createdAt: "desc" },
+      take: 10,
+    }),
+  ]);
+  const balance = pointSum._sum.amount ?? 0;
 
   return (
     <main className="page-shell">
@@ -94,6 +105,28 @@ export default async function ProfilePage() {
           </div>
         </section>
       </div>
+
+      <section className="dash-card" style={{ marginTop: 20 }}>
+        <h2>포인트</h2>
+        <p style={{ fontSize: 28, fontWeight: 800, color: "var(--navy)", margin: "8px 0 4px" }}>
+          {balance.toLocaleString("ko-KR")} P
+        </p>
+        <p className="muted">후기를 작성하면 {POINT_RULES.REVIEW_REWARD.toLocaleString("ko-KR")}P가 적립됩니다. 포인트 사용처는 준비 중입니다.</p>
+
+        <div style={{ marginTop: 16 }}>
+          {pointHistory.length === 0 ? (
+            <p className="muted">적립 내역이 없습니다.</p>
+          ) : (
+            pointHistory.map((h) => (
+              <div className="request-row" key={h.id}>
+                <span>{POINT_REASON_LABEL[h.reason] ?? h.reason}</span>
+                <b>{h.amount > 0 ? "+" : ""}{h.amount.toLocaleString("ko-KR")}P</b>
+                <span className="muted">{h.createdAt.toLocaleDateString("ko-KR")}</span>
+              </div>
+            ))
+          )}
+        </div>
+      </section>
     </main>
   );
 }

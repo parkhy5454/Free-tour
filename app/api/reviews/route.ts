@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { getSession } from "@/lib/auth";
+import { POINT_RULES } from "@/lib/points";
 
 const reviewSchema = z.object({
   bookingId: z.string().min(1),
@@ -41,14 +42,27 @@ export async function POST(req: Request) {
   }
 
   try {
-    const review = await prisma.review.create({
-      data: {
-        bookingId: booking.id,
-        authorId: session.id,
-        rating: data.rating,
-        comment: data.comment,
-      },
-      select: { id: true },
+    // 후기 저장과 포인트 적립을 한 트랜잭션으로 처리합니다.
+    const review = await prisma.$transaction(async (tx) => {
+      const created = await tx.review.create({
+        data: {
+          bookingId: booking.id,
+          authorId: session.id,
+          rating: data.rating,
+          comment: data.comment,
+        },
+        select: { id: true },
+      });
+      await tx.pointLedger.create({
+        data: {
+          userId: session.id,
+          amount: POINT_RULES.REVIEW_REWARD,
+          reason: "REVIEW_REWARD",
+          bookingId: booking.id,
+          note: "후기 작성 적립",
+        },
+      });
+      return created;
     });
     return NextResponse.json({ ok: true, id: review.id });
   } catch (e: unknown) {

@@ -64,6 +64,7 @@ model User {
   bookingsAsTraveler Booking[] @relation("TravelerBookings")
   reviews Review[]
   pickupRequests PickupRequest[] @relation("TravelerPickups")
+  pointLedger PointLedger[]
 }
 
 model GuideProfile {
@@ -144,6 +145,19 @@ model Booking {
   pickup         PickupRequest?
   @@index([travelerId, createdAt])
   @@index([guideId, createdAt])
+}
+
+model PointLedger {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  amount    Int
+  reason    String
+  bookingId String?
+  note      String?
+  createdAt DateTime @default(now())
+  @@unique([bookingId, reason])
+  @@index([userId, createdAt])
 }
 
 model TransferPartner {
