@@ -8,10 +8,11 @@ type Props = {
   countryName: string;
   countryLabel: string;
   partner: { name: string; phone: string } | null;
+  guidePhone: string | null;
 };
 
 // 여행자 긴급 패널: 긴급 번호 바로 걸기 + 가이드·업체에 SOS 알림 보내기
-export default function SosPanel({ bookingId, countryName, countryLabel, partner }: Props) {
+export default function SosPanel({ bookingId, countryName, countryLabel, partner, guidePhone }: Props) {
   const [open, setOpen] = useState(false);
   const [message, setMessage] = useState("");
   const [busy, setBusy] = useState(false);
@@ -66,6 +67,11 @@ export default function SosPanel({ bookingId, countryName, countryLabel, partner
         <p className="muted" style={{ fontSize: 13 }}>{countryLabel}의 긴급 번호가 등록되어 있지 않습니다. 현지 대사관 번호를 확인해 주세요.</p>
       )}
 
+      {guidePhone && (
+        <p style={{ fontSize: 13, margin: "0 0 6px" }}>
+          가이드: <a href={`tel:${guidePhone}`} className="text-link">{guidePhone}</a>
+        </p>
+      )}
       {partner && (
         <p style={{ fontSize: 13, margin: "0 0 12px" }}>
           배정 업체: {partner.name} · <a href={`tel:${partner.phone}`} className="text-link">{partner.phone}</a>

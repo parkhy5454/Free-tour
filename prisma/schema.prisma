@@ -82,6 +82,7 @@ model GuideProfile {
   specialties    String[]
   hourlyRate     Int      @default(50000)
   currency       String   @default("KRW")
+  phone          String?
   isPublished    Boolean  @default(true)
   createdAt      DateTime @default(now())
   proposals      GuideProposal[]

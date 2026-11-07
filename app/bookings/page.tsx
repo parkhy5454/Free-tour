@@ -126,6 +126,7 @@ export default async function BookingsPage() {
                         countryName={b.request.country}
                         countryLabel={country.label}
                         partner={p?.partner ?? null}
+                        guidePhone={b.guide.phone ?? null}
                       />
                     )}
                     {(b.status === "CONFIRMED" || b.status === "PENDING_PAYMENT") && (

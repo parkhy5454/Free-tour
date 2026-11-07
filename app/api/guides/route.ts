@@ -20,6 +20,7 @@ export async function POST(req: Request) {
       specialties: z.string(),
       hourlyRate: z.coerce.number().int().positive(),
       currency: z.string().length(3),
+      phone: z.string().trim().min(6, "연락처를 입력해 주세요.").max(30),
     }).parse(await req.json());
 
     const data = {
@@ -29,6 +30,7 @@ export async function POST(req: Request) {
       city: d.city,
       hourlyRate: d.hourlyRate,
       currency: d.currency,
+      phone: d.phone,
       languages: splitList(d.languages),
       specialties: splitList(d.specialties),
     };

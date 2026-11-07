@@ -49,6 +49,7 @@ export default function GuideJoin() {
             </select>
           </label>
           <label>도시<input name="city" required placeholder="Seoul"/></label>
+          <label>연락처 (여행자 긴급 연락용)<input name="phone" required minLength={6} maxLength={30} placeholder="+82 10-0000-0000"/></label>
           <label>시간당 요금<input name="hourlyRate" type="number" min="1" defaultValue="50000" required/></label>
           <label>
             통화
