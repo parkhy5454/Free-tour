@@ -357,7 +357,7 @@ export default async function AdminPage({
         </section>
         <TableWrap caption={`파트너 ${partners.length}곳`}>
           <thead>
-            <tr><th>업체명</th><th>국가</th><th>연락처</th><th>이메일</th><th>상태</th><th>등록일</th><th>관리</th></tr>
+            <tr><th>업체명</th><th>국가</th><th>연락처</th><th>사업자번호</th><th>면허번호</th><th>차량 번호</th><th>신고</th><th>상태</th><th>등록일</th><th>관리</th></tr>
           </thead>
           <tbody>
             {partners.map((x) => (
@@ -365,8 +365,11 @@ export default async function AdminPage({
                 <td>{x.name}</td>
                 <td>{countryLabel(x.country)}</td>
                 <td>{x.phone}</td>
-                <td>{x.email ?? "-"}</td>
-                <td>{x.isActive ? "활성" : x.userId ? "승인 대기" : "비활성"}</td>
+                <td>{x.businessNumber ?? "-"}</td>
+                <td>{x.licenseNumber ?? "-"}</td>
+                <td>{x.vehiclePlates.length ? x.vehiclePlates.join(", ") : "-"}</td>
+                <td><span className={x.reportCount >= 3 ? "admin-badge" : undefined}>{x.reportCount}건</span></td>
+                <td>{x.isActive ? "활성" : "중단"}{x.userId ? " · 자가 등록" : ""}</td>
                 <td>{fmtDate(x.createdAt)}</td>
                 <td><PartnerActiveToggle partnerId={x.id} isActive={x.isActive} /></td>
               </tr>
