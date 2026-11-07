@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { redirect } from "next/navigation";
 import { getCountry, formatInZone } from "@/lib/countries";
 import PickupCancelButton from "@/components/PickupCancelButton";
+import PickupReportButton from "@/components/PickupReportButton";
 
 export const dynamic = "force-dynamic";
 
@@ -39,6 +40,7 @@ export default async function BookingsPage() {
           driverPhone: true,
           vehiclePlate: true,
           vehicleSeats: true,
+          reportedAt: true,
           partner: { select: { name: true, phone: true } },
         },
       },
@@ -87,6 +89,7 @@ export default async function BookingsPage() {
                         </p>
                       )}
                       {isTraveler && pickupCancellable && <PickupCancelButton pickupId={p.id} />}
+                      {isTraveler && p.partner && p.status !== "CANCELLED" && <PickupReportButton pickupId={p.id} reported={!!p.reportedAt} />}
                     </div>
                   )}
 

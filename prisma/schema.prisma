@@ -170,6 +170,11 @@ model TransferPartner {
   isActive  Boolean         @default(true)
   userId    String?         @unique
   user      User?           @relation(fields: [userId], references: [id], onDelete: SetNull)
+  businessNumber String?
+  licenseNumber  String?
+  vehiclePlates  String[]   @default([])
+  termsAgreedAt  DateTime?
+  reportCount    Int        @default(0)
   createdAt DateTime        @default(now())
   pickups   PickupRequest[]
   @@index([country])
@@ -199,6 +204,8 @@ model PickupRequest {
   driverPhone  String?
   vehiclePlate String?
   vehicleSeats Int?
+  acceptedAt   DateTime?
+  reportedAt   DateTime?
   createdAt    DateTime      @default(now())
   updatedAt    DateTime      @updatedAt
   @@index([status, arrivalAt])

@@ -30,7 +30,7 @@ export default async function PartnerPage() {
       <main className="page-shell narrow">
         <span className="eyebrow dark">PARTNER CENTER</span>
         <h1>{partner.name}</h1>
-        <p>승인 대기 중입니다. 관리자가 확인하면 배정 요청을 받을 수 있습니다.</p>
+        <p>계정이 일시 중지되어 새 픽업을 배정받을 수 없습니다. 신고 내용을 확인하려면 고객센터로 문의해 주세요.</p>
         <p className="muted">운영 국가: {countryLabel(partner.country)}</p>
       </main>
     );
@@ -51,8 +51,10 @@ export default async function PartnerPage() {
     arrivalLabel: country ? formatInZone(p.arrivalAt, country.timezone) : p.arrivalAt.toISOString(),
     passengers: p.passengers,
     luggageCount: p.luggageCount,
-    pickupAddress: p.pickupAddress,
-    note: p.note,
+    accepted: !!p.acceptedAt,
+    // 여행자 주소와 요청 사항은 파트너가 수락한 뒤에만 보입니다.
+    pickupAddress: p.acceptedAt ? p.pickupAddress : "수락 후 확인 가능",
+    note: p.acceptedAt ? p.note : null,
     driverName: p.driverName,
     driverPhone: p.driverPhone,
     vehiclePlate: p.vehiclePlate,

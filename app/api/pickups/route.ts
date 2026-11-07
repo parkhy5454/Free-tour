@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { getSession } from "@/lib/auth";
 import { getCountry, zonedLocalToUtc } from "@/lib/countries";
 import { priceInKrw } from "@/lib/points";
+import { pickPartnerId } from "@/lib/pickupAssign";
 
 const createSchema = z.object({
   bookingId: z.string().min(1),
@@ -87,6 +88,9 @@ export async function POST(req: Request) {
         }
       }
 
+      // 같은 국가의 활성 파트너가 있으면 자동 배정합니다 (배정 대상 수락은 파트너가 합니다).
+      const partnerId = await pickPartnerId(tx, country.name);
+
       const created = await tx.pickupRequest.create({
         data: {
           bookingId: booking.id,
@@ -102,6 +106,7 @@ export async function POST(req: Request) {
           price: country.pickupPrice,
           currency: country.currency,
           pointsUsed: requestedPoints,
+          ...(partnerId && { partnerId, status: "ASSIGNED" as const }),
         },
         select: { id: true },
       });
