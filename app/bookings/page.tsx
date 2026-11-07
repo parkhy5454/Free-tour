@@ -8,6 +8,7 @@ import PickupCancelButton from "@/components/PickupCancelButton";
 import PickupReportButton from "@/components/PickupReportButton";
 import TransferCancelButton from "@/components/TransferCancelButton";
 import CancelBookingButton from "@/components/CancelBookingButton";
+import SosPanel from "@/components/SosPanel";
 import { refundAmountFor } from "@/lib/cancellation";
 
 export const dynamic = "force-dynamic";
@@ -118,6 +119,14 @@ export default async function BookingsPage() {
                     )}
                     {b.status !== "CANCELLED" && (
                       <Link href={`/chat/${b.id}`} className="text-link">채팅 →</Link>
+                    )}
+                    {isTraveler && b.status !== "CANCELLED" && country && (
+                      <SosPanel
+                        bookingId={b.id}
+                        countryName={b.request.country}
+                        countryLabel={country.label}
+                        partner={p?.partner ?? null}
+                      />
                     )}
                     {(b.status === "CONFIRMED" || b.status === "PENDING_PAYMENT") && (
                       <CancelBookingButton

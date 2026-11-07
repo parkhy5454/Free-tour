@@ -170,8 +170,10 @@ model Booking {
   pickup         PickupRequest?
   transfers      HotelTransfer[]
   messages       Message[]
+  sentIncidents  Incident[] @relation("SentIncidents")
   experienceId   String?
   cancelledAt    DateTime?
+  incidents      Incident[]
   cancelledBy    String?
   refundAmount   Int           @default(0)
   experience     Experience?   @relation(fields: [experienceId], references: [id], onDelete: SetNull)
@@ -296,4 +298,21 @@ model Message {
   body      String   @db.VarChar(1000)
   createdAt DateTime @default(now())
   @@index([bookingId, createdAt])
+}
+
+// 여행자가 보낸 긴급 알림(SOS). 앱은 알림과 기록만 담당하며, 실제 대응은 사람이 합니다.
+model Incident {
+  id          String   @id @default(cuid())
+  bookingId   String
+  booking     Booking  @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  reporterId  String
+  reporter    User     @relation("SentIncidents", fields: [reporterId], references: [id], onDelete: Cascade)
+  type        String   @default("SOS")
+  message     String?  @db.VarChar(500)
+  status      String   @default("OPEN")
+  adminNote   String?  @db.VarChar(500)
+  createdAt   DateTime @default(now())
+  resolvedAt  DateTime?
+  @@index([status, createdAt])
+  @@index([bookingId])
 }

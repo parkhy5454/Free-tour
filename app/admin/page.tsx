@@ -8,6 +8,7 @@ import PickupAdminRow from "@/components/PickupAdminRow";
 import PartnerForm from "@/components/PartnerForm";
 import BookingStatusSelect from "@/components/BookingStatusSelect";
 import PartnerActiveToggle from "@/components/PartnerActiveToggle";
+import IncidentResolveButton from "@/components/IncidentResolveButton";
 
 export const dynamic = "force-dynamic";
 
@@ -24,6 +25,7 @@ const TABS = [
   { key: "pickups", label: "픽업" },
   { key: "partners", label: "파트너" },
   { key: "transfers", label: "이동" },
+  { key: "incidents", label: "사고" },
 ] as const;
 
 type TabKey = (typeof TABS)[number]["key"];
@@ -278,6 +280,39 @@ export default async function AdminPage({
               <td className="wrap">{r.comment}</td>
               <td>{fmtMoney(r.booking.amount, r.booking.currency)}</td>
               <td>{fmtDate(r.createdAt)}</td>
+            </tr>
+          ))}
+        </tbody>
+      </TableWrap>
+    );
+  }
+
+  if (active === "incidents") {
+    const incidents = await prisma.incident.findMany({
+      orderBy: { createdAt: "desc" },
+      take: LIMIT,
+      include: {
+        reporter: { select: { name: true, email: true } },
+        booking: { select: { id: true, request: { select: { city: true, country: true } } } },
+      },
+    });
+    const openCount = incidents.filter((i) => i.status === "OPEN").length;
+    body = (
+      <TableWrap caption={`긴급 알림 ${incidents.length}건 · 미처리 ${openCount}건`}>
+        <thead>
+          <tr><th>접수</th><th>유형</th><th>여행자</th><th>여행지</th><th>내용</th><th>상태</th><th>대응 메모</th><th>처리</th></tr>
+        </thead>
+        <tbody>
+          {incidents.map((i) => (
+            <tr key={i.id}>
+              <td>{fmtDate(i.createdAt)}</td>
+              <td>{i.type}</td>
+              <td>{i.reporter.name}<br /><span className="muted">{i.reporter.email}</span></td>
+              <td>{i.booking.request.city}, {countryLabel(i.booking.request.country)}</td>
+              <td>{i.message ?? "-"}</td>
+              <td><span className="admin-badge">{i.status === "OPEN" ? "미처리" : "처리됨"}</span></td>
+              <td>{i.adminNote ?? "-"}</td>
+              <td>{i.status === "OPEN" ? <IncidentResolveButton incidentId={i.id} /> : "-"}</td>
             </tr>
           ))}
         </tbody>
