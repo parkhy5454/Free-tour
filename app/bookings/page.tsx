@@ -26,6 +26,7 @@ export default async function BookingsPage() {
       request: true,
       guide: { include: { user: true } },
       traveler: true,
+      experience: { select: { title: true } },
       review: { select: { rating: true, comment: true } },
       pickup: {
         select: {
@@ -72,6 +73,7 @@ export default async function BookingsPage() {
               <div className="request-row" key={b.id} style={{ alignItems: "flex-start" }}>
                 <div>
                   <b>{b.request.city}, {b.request.country}</b>
+                  {b.experience && <p className="muted" style={{ margin: "4px 0 0", fontSize: 13 }}>체험: {b.experience.title}</p>}
                   <p className="muted">여행자: {b.traveler.name} · 가이드: {b.guide.user.name}</p>
                   <p className="muted">
                     {b.amount.toLocaleString()} {b.currency} · 플랫폼 수수료 예정 {b.platformFee.toLocaleString()} {b.currency}
