@@ -3,6 +3,7 @@ import { getSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { redirect } from "next/navigation";
 import { getCountry, formatInZone } from "@/lib/countries";
+import { transferPriceFor } from "@/lib/transfers";
 import PickupCancelButton from "@/components/PickupCancelButton";
 import PickupReportButton from "@/components/PickupReportButton";
 
@@ -27,6 +28,10 @@ export default async function BookingsPage() {
       guide: { include: { user: true } },
       traveler: true,
       experience: { select: { title: true } },
+      transfers: {
+        orderBy: { rideAt: "asc" },
+        select: { id: true, status: true, fromAddress: true, toAddress: true, rideAt: true, vehiclePlate: true, vehicleSeats: true, partner: { select: { name: true, phone: true } } },
+      },
       review: { select: { rating: true, comment: true } },
       pickup: {
         select: {
@@ -108,6 +113,9 @@ export default async function BookingsPage() {
                     {canReview && (
                       <Link href={`/reviews/new?bookingId=${b.id}`} className="text-link">후기 작성 →</Link>
                     )}
+                    {isTraveler && b.status !== "CANCELLED" && !!transferPriceFor(b.request.country) && (
+                      <Link href={`/transfer/new?bookingId=${b.id}`} className="text-link">이동 신청 →</Link>
+                    )}
                     {isTraveler && b.status === "COMPLETED" && (
                       <Link
                         href={`/requests/new?country=${encodeURIComponent(b.request.country)}&city=${encodeURIComponent(b.request.city)}`}
@@ -118,6 +126,18 @@ export default async function BookingsPage() {
                     )}
                   </div>
                 </div>
+                {b.transfers.length > 0 && (
+                  <div style={{ marginTop: 8, fontSize: 13 }}>
+                    {b.transfers.map((t) => (
+                      <p key={t.id} className="muted" style={{ margin: "4px 0" }}>
+                        🚗 이동 · {PICKUP_LABEL[t.status] ?? t.status} · {t.fromAddress} → {t.toAddress}
+                        {t.partner && ` · 업체 ${t.partner.name} (${t.partner.phone})`}
+                        {t.vehiclePlate && ` · 차량 ${t.vehiclePlate}`}
+                        {t.vehicleSeats && ` · 탑승 가능 ${t.vehicleSeats}명`}
+                      </p>
+                    ))}
+                  </div>
+                )}
                 <span>{b.status} / {b.paymentStatus}</span>
               </div>
             );

@@ -64,6 +64,7 @@ model User {
   bookingsAsTraveler Booking[] @relation("TravelerBookings")
   reviews Review[]
   pickupRequests PickupRequest[] @relation("TravelerPickups")
+  transfers      HotelTransfer[] @relation("TravelerTransfers")
   pointLedger PointLedger[]
   transferPartner TransferPartner?
 }
@@ -166,6 +167,7 @@ model Booking {
   updatedAt      DateTime      @updatedAt
   review         Review?
   pickup         PickupRequest?
+  transfers      HotelTransfer[]
   experienceId   String?
   experience     Experience?   @relation(fields: [experienceId], references: [id], onDelete: SetNull)
   @@index([travelerId, createdAt])
@@ -201,6 +203,7 @@ model TransferPartner {
   reportCount    Int        @default(0)
   createdAt DateTime        @default(now())
   pickups   PickupRequest[]
+  transfers HotelTransfer[]
   @@index([country])
 }
 
@@ -245,4 +248,35 @@ model Review {
   rating    Int
   comment   String   @db.VarChar(1500)
   createdAt DateTime @default(now())
+}
+
+// 여행 중 호텔·장소 간 이동 (가이드 일정과 별도). 상태는 PickupStatus를 그대로 사용합니다.
+model HotelTransfer {
+  id            String        @id @default(cuid())
+  bookingId     String
+  booking       Booking       @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  travelerId    String
+  traveler      User          @relation("TravelerTransfers", fields: [travelerId], references: [id], onDelete: Cascade)
+  country       String
+  fromAddress   String
+  toAddress     String
+  rideAt        DateTime
+  passengers    Int           @default(1)
+  luggageCount  Int           @default(0)
+  note          String?
+  price         Int
+  currency      String
+  status        PickupStatus  @default(REQUESTED)
+  partnerId     String?
+  partner       TransferPartner? @relation(fields: [partnerId], references: [id], onDelete: SetNull)
+  acceptedAt    DateTime?
+  driverName    String?
+  driverPhone   String?
+  vehiclePlate  String?
+  vehicleSeats  Int?
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+  @@index([status, rideAt])
+  @@index([partnerId])
+  @@index([bookingId])
 }

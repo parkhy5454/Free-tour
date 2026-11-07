@@ -4,6 +4,7 @@ import { getSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { countryLabel, getCountry, formatInZone } from "@/lib/countries";
 import PartnerPickupRow from "@/components/PartnerPickupRow";
+import PartnerTransferRow from "@/components/PartnerTransferRow";
 
 export const dynamic = "force-dynamic";
 
@@ -35,6 +36,30 @@ export default async function PartnerPage() {
       </main>
     );
   }
+
+  const transfers = await prisma.hotelTransfer.findMany({
+    where: { partnerId: partner.id, status: { in: ["ASSIGNED", "IN_PROGRESS", "COMPLETED"] } },
+    orderBy: { rideAt: "asc" },
+    take: 100,
+  });
+  const transferRows = transfers.map((t) => {
+    const c = getCountry(t.country);
+    return {
+      id: t.id,
+      status: t.status,
+      fromAddress: t.acceptedAt ? t.fromAddress : "수락 후 확인 가능",
+      toAddress: t.acceptedAt ? t.toAddress : "수락 후 확인 가능",
+      rideLabel: c ? formatInZone(t.rideAt, c.timezone) : t.rideAt.toISOString(),
+      passengers: t.passengers,
+      luggageCount: t.luggageCount,
+      note: t.acceptedAt ? t.note : null,
+      accepted: !!t.acceptedAt,
+      vehiclePlate: t.vehiclePlate,
+      vehicleSeats: t.vehicleSeats,
+      driverName: t.driverName,
+      driverPhone: t.driverPhone,
+    };
+  });
 
   const pickups = await prisma.pickupRequest.findMany({
     where: { partnerId: partner.id, status: { in: ["ASSIGNED", "IN_PROGRESS", "COMPLETED"] } },
@@ -70,6 +95,12 @@ export default async function PartnerPage() {
         <p className="muted">배정된 픽업이 아직 없습니다.</p>
       ) : (
         rows.map((r) => <PartnerPickupRow key={r.id} pickup={r} />)
+      )}
+      <h2 style={{ marginTop: 32 }}>호텔 이동</h2>
+      {transferRows.length === 0 ? (
+        <p className="muted">배정된 이동이 아직 없습니다.</p>
+      ) : (
+        transferRows.map((r) => <PartnerTransferRow key={r.id} transfer={r} />)
       )}
     </main>
   );
