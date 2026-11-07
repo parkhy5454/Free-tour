@@ -344,7 +344,7 @@ export default async function AdminPage({
                 <td>{t.fromAddress} → {t.toAddress}</td>
                 <td>{formatInZone(t.rideAt, c?.timezone ?? "Asia/Seoul")}</td>
                 <td>{t.passengers}명 / {t.luggageCount}개</td>
-                <td>{fmtMoney(t.price, t.currency)}</td>
+                <td>{fmtMoney(t.price, t.currency)}<br /><span className="muted" style={{ fontSize: 12 }}>수수료 {fmtMoney(t.platformFee, t.currency)} · 정산 {fmtMoney(t.partnerPayout, t.currency)}</span></td>
                 <td><span className="admin-badge">{t.status}</span></td>
                 <td>{t.partner?.name ?? "미배정"}{t.acceptedAt ? " · 수락" : ""}</td>
                 <td>{t.vehiclePlate ?? "-"} / {t.vehicleSeats ?? "-"}명</td>
@@ -397,7 +397,7 @@ export default async function AdminPage({
                   luggageCount: p.luggageCount,
                   pickupAddress: p.pickupAddress,
                   note: p.note,
-                  price: `${p.price.toLocaleString("ko-KR")} ${p.currency}${p.pointsUsed > 0 ? ` (포인트 -${p.pointsUsed.toLocaleString("ko-KR")}P)` : ""}`,
+                  price: `${p.price.toLocaleString("ko-KR")} ${p.currency}${p.pointsUsed > 0 ? ` (포인트 -${p.pointsUsed.toLocaleString("ko-KR")}P)` : ""} · 수수료 ${p.platformFee.toLocaleString("ko-KR")} · 정산 ${p.partnerPayout.toLocaleString("ko-KR")}`,
                   status: p.status,
                   partnerId: p.partnerId,
                   driverName: p.driverName,

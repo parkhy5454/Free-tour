@@ -114,3 +114,11 @@ CREATE INDEX IF NOT EXISTS "Incident_bookingId_idx" ON "Incident"("bookingId");
 
 -- 9. 가이드 연락처
 ALTER TABLE "GuideProfile" ADD COLUMN IF NOT EXISTS "phone" TEXT;
+
+-- 10. 파트너 수수료와 정산액 (픽업·이동)
+ALTER TABLE "PickupRequest"
+  ADD COLUMN IF NOT EXISTS "platformFee" INTEGER NOT NULL DEFAULT 0,
+  ADD COLUMN IF NOT EXISTS "partnerPayout" INTEGER NOT NULL DEFAULT 0;
+ALTER TABLE "HotelTransfer"
+  ADD COLUMN IF NOT EXISTS "platformFee" INTEGER NOT NULL DEFAULT 0,
+  ADD COLUMN IF NOT EXISTS "partnerPayout" INTEGER NOT NULL DEFAULT 0;

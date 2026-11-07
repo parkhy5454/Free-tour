@@ -5,6 +5,7 @@ import { getSession } from "@/lib/auth";
 import { getCountry, zonedLocalToUtc } from "@/lib/countries";
 import { priceInKrw } from "@/lib/points";
 import { pickPartnerId } from "@/lib/pickupAssign";
+import { partnerFeeSplit } from "@/lib/fees";
 
 const createSchema = z.object({
   bookingId: z.string().min(1),
@@ -104,6 +105,7 @@ export async function POST(req: Request) {
           pickupAddress: data.pickupAddress,
           note: data.note || null,
           price: country.pickupPrice,
+          ...partnerFeeSplit(country.pickupPrice),
           currency: country.currency,
           pointsUsed: requestedPoints,
           ...(partnerId && { partnerId, status: "ASSIGNED" as const }),
