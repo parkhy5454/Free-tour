@@ -23,6 +23,7 @@ const TABS = [
   { key: "reviews", label: "리뷰" },
   { key: "pickups", label: "픽업" },
   { key: "partners", label: "파트너" },
+  { key: "transfers", label: "이동" },
 ] as const;
 
 type TabKey = (typeof TABS)[number]["key"];
@@ -279,6 +280,42 @@ export default async function AdminPage({
               <td>{fmtDate(r.createdAt)}</td>
             </tr>
           ))}
+        </tbody>
+      </TableWrap>
+    );
+  }
+
+  if (active === "transfers") {
+    const transfers = await prisma.hotelTransfer.findMany({
+      orderBy: { rideAt: "asc" },
+      take: LIMIT,
+      include: {
+        traveler: { select: { name: true, email: true } },
+        partner: { select: { name: true } },
+      },
+    });
+    body = (
+      <TableWrap caption={`호텔 이동 ${transfers.length}건 (이동 시각순, 조회 전용)`}>
+        <thead>
+          <tr><th>여행자</th><th>국가</th><th>출발지 → 도착지</th><th>이동 시각 (현지)</th><th>인원 / 짐</th><th>요금</th><th>상태</th><th>파트너</th><th>차량 / 탑승</th></tr>
+        </thead>
+        <tbody>
+          {transfers.map((t) => {
+            const c = getCountry(t.country);
+            return (
+              <tr key={t.id}>
+                <td>{t.traveler.name}<br /><span className="muted">{t.traveler.email}</span></td>
+                <td>{countryLabel(t.country)}</td>
+                <td>{t.fromAddress} → {t.toAddress}</td>
+                <td>{formatInZone(t.rideAt, c?.timezone ?? "Asia/Seoul")}</td>
+                <td>{t.passengers}명 / {t.luggageCount}개</td>
+                <td>{fmtMoney(t.price, t.currency)}</td>
+                <td><span className="admin-badge">{t.status}</span></td>
+                <td>{t.partner?.name ?? "미배정"}{t.acceptedAt ? " · 수락" : ""}</td>
+                <td>{t.vehiclePlate ?? "-"} / {t.vehicleSeats ?? "-"}명</td>
+              </tr>
+            );
+          })}
         </tbody>
       </TableWrap>
     );
