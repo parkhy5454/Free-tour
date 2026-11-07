@@ -6,6 +6,7 @@ import { getCountry, formatInZone } from "@/lib/countries";
 import { transferPriceFor } from "@/lib/transfers";
 import PickupCancelButton from "@/components/PickupCancelButton";
 import PickupReportButton from "@/components/PickupReportButton";
+import TransferCancelButton from "@/components/TransferCancelButton";
 
 export const dynamic = "force-dynamic";
 
@@ -135,6 +136,11 @@ export default async function BookingsPage() {
                         {t.vehiclePlate && ` · 차량 ${t.vehiclePlate}`}
                         {t.vehicleSeats && ` · 탑승 가능 ${t.vehicleSeats}명`}
                       </p>
+                    ))}
+                    {b.transfers.filter((t) => t.status === "REQUESTED" || t.status === "ASSIGNED").map((t) => (
+                      <div key={`cancel-${t.id}`} style={{ marginTop: 2 }}>
+                        <TransferCancelButton transferId={t.id} />
+                      </div>
                     ))}
                   </div>
                 )}
