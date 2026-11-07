@@ -171,6 +171,9 @@ model Booking {
   transfers      HotelTransfer[]
   messages       Message[]
   experienceId   String?
+  cancelledAt    DateTime?
+  cancelledBy    String?
+  refundAmount   Int           @default(0)
   experience     Experience?   @relation(fields: [experienceId], references: [id], onDelete: SetNull)
   @@index([travelerId, createdAt])
   @@index([guideId, createdAt])

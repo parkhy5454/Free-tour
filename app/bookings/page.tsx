@@ -7,6 +7,8 @@ import { transferPriceFor } from "@/lib/transfers";
 import PickupCancelButton from "@/components/PickupCancelButton";
 import PickupReportButton from "@/components/PickupReportButton";
 import TransferCancelButton from "@/components/TransferCancelButton";
+import CancelBookingButton from "@/components/CancelBookingButton";
+import { refundAmountFor } from "@/lib/cancellation";
 
 export const dynamic = "force-dynamic";
 
@@ -117,6 +119,13 @@ export default async function BookingsPage() {
                     {b.status !== "CANCELLED" && (
                       <Link href={`/chat/${b.id}`} className="text-link">채팅 →</Link>
                     )}
+                    {(b.status === "CONFIRMED" || b.status === "PENDING_PAYMENT") && (
+                      <CancelBookingButton
+                        bookingId={b.id}
+                        currency={b.currency}
+                        estimatedRefund={refundAmountFor(b.amount, b.request.startDate, isTraveler ? "TRAVELER" : "GUIDE")}
+                      />
+                    )}
                     {isTraveler && b.status !== "CANCELLED" && !!transferPriceFor(b.request.country) && (
                       <Link href={`/transfer/new?bookingId=${b.id}`} className="text-link">이동 신청 →</Link>
                     )}
@@ -148,6 +157,11 @@ export default async function BookingsPage() {
                   </div>
                 )}
                 <span>{b.status} / {b.paymentStatus}</span>
+                {b.status === "CANCELLED" && (
+                  <p className="muted" style={{ fontSize: 13, margin: "4px 0 0" }}>
+                    취소 {b.cancelledBy === "GUIDE" ? "(가이드)" : b.cancelledBy === "TRAVELER" ? "(여행자)" : ""} · 환불 예정 {b.refundAmount.toLocaleString("ko-KR")} {b.currency}
+                  </p>
+                )}
               </div>
             );
           })
