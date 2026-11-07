@@ -84,6 +84,27 @@ model GuideProfile {
   createdAt      DateTime @default(now())
   proposals      GuideProposal[]
   bookings       Booking[]
+  experiences    Experience[]
+}
+
+// 가이드가 올리는 현지 체험 상품 (고정 가격, 예약 시 여행 요청·견적·예약을 자동 생성)
+model Experience {
+  id            String   @id @default(cuid())
+  guideId       String
+  guide         GuideProfile @relation(fields: [guideId], references: [id], onDelete: Cascade)
+  title         String
+  description   String
+  country       String
+  city          String
+  durationHours Int
+  price         Int
+  currency      String   @default("KRW")
+  maxPeople     Int      @default(4)
+  isActive      Boolean  @default(true)
+  createdAt     DateTime @default(now())
+  bookings      Booking[]
+  @@index([country, city])
+  @@index([guideId])
 }
 
 model TripRequest {
@@ -144,6 +165,8 @@ model Booking {
   updatedAt      DateTime      @updatedAt
   review         Review?
   pickup         PickupRequest?
+  experienceId   String?
+  experience     Experience?   @relation(fields: [experienceId], references: [id], onDelete: SetNull)
   @@index([travelerId, createdAt])
   @@index([guideId, createdAt])
 }
