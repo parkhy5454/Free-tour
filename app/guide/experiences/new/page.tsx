@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import { EXPERIENCE_CATEGORIES } from "@/lib/experiences";
 
 // 가이드: 체험 상품 등록
 export default function NewExperiencePage() {
@@ -46,6 +47,14 @@ export default function NewExperiencePage() {
       </div>
       <form className="form-card" onSubmit={submit}>
         <div className="form-grid">
+          <label className="span-two">
+            카테고리
+            <select name="category" required defaultValue="TOUR">
+              {EXPERIENCE_CATEGORIES.map((c) => (
+                <option key={c.value} value={c.value}>{c.label}</option>
+              ))}
+            </select>
+          </label>
           <label className="span-two">
             체험 이름
             <input name="title" required minLength={3} maxLength={100} placeholder="예: 새벽 츠키지 시장 투어" />

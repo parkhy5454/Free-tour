@@ -2,8 +2,10 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { getSession } from "@/lib/auth";
+import { CATEGORY_VALUES } from "@/lib/experiences";
 
 const createSchema = z.object({
+  category: z.enum(CATEGORY_VALUES, { error: "카테고리를 선택해 주세요." }),
   title: z.string().trim().min(3, "체험 이름은 3자 이상 입력해 주세요.").max(100),
   description: z.string().trim().min(20, "체험 설명은 20자 이상 입력해 주세요.").max(1500),
   durationHours: z.coerce.number().int().min(1).max(12),

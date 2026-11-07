@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { countryLabel } from "@/lib/countries";
+import { categoryLabel } from "@/lib/experiences";
 import ExperienceBookForm from "@/components/ExperienceBookForm";
 
 export const dynamic = "force-dynamic";
@@ -15,7 +16,7 @@ export default async function ExperienceDetailPage({ params }: { params: Promise
 
   return (
     <main className="page-shell narrow">
-      <span className="eyebrow dark">LOCAL EXPERIENCE</span>
+      <span className="eyebrow dark">{categoryLabel(exp.category)}</span>
       <h1>{exp.title}</h1>
       <p className="muted">{exp.city}, {countryLabel(exp.country)} · {exp.durationHours}시간 · 최대 {exp.maxPeople}명 · 가이드 {exp.guide.user.name}</p>
       <p style={{ whiteSpace: "pre-wrap", margin: "18px 0" }}>{exp.description}</p>

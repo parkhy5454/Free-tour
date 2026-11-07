@@ -96,6 +96,7 @@ model Experience {
   description   String
   country       String
   city          String
+  category      String   @default("TOUR")
   durationHours Int
   price         Int
   currency      String   @default("KRW")
