@@ -65,6 +65,7 @@ model User {
   reviews Review[]
   pickupRequests PickupRequest[] @relation("TravelerPickups")
   transfers      HotelTransfer[] @relation("TravelerTransfers")
+  sentMessages   Message[] @relation("SentMessages")
   pointLedger PointLedger[]
   transferPartner TransferPartner?
 }
@@ -168,6 +169,7 @@ model Booking {
   review         Review?
   pickup         PickupRequest?
   transfers      HotelTransfer[]
+  messages       Message[]
   experienceId   String?
   experience     Experience?   @relation(fields: [experienceId], references: [id], onDelete: SetNull)
   @@index([travelerId, createdAt])
@@ -279,4 +281,16 @@ model HotelTransfer {
   @@index([status, rideAt])
   @@index([partnerId])
   @@index([bookingId])
+}
+
+// 예약 단위 채팅 메시지 (여행자와 배정된 가이드만 볼 수 있음)
+model Message {
+  id        String   @id @default(cuid())
+  bookingId String
+  booking   Booking  @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  senderId  String
+  sender    User     @relation("SentMessages", fields: [senderId], references: [id], onDelete: Cascade)
+  body      String   @db.VarChar(1000)
+  createdAt DateTime @default(now())
+  @@index([bookingId, createdAt])
 }

@@ -114,6 +114,9 @@ export default async function BookingsPage() {
                     {canReview && (
                       <Link href={`/reviews/new?bookingId=${b.id}`} className="text-link">후기 작성 →</Link>
                     )}
+                    {b.status !== "CANCELLED" && (
+                      <Link href={`/chat/${b.id}`} className="text-link">채팅 →</Link>
+                    )}
                     {isTraveler && b.status !== "CANCELLED" && !!transferPriceFor(b.request.country) && (
                       <Link href={`/transfer/new?bookingId=${b.id}`} className="text-link">이동 신청 →</Link>
                     )}
