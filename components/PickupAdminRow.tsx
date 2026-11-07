@@ -27,6 +27,9 @@ export type AdminPickupView = {
   partnerId: string | null;
   driverName: string | null;
   driverPhone: string | null;
+  vehiclePlate: string | null;
+  vehicleSeats: number | null;
+  accepted: boolean;
 };
 
 export type AdminPartnerOption = { id: string; name: string; phone: string };
@@ -113,6 +116,15 @@ export default function PickupAdminRow({
       <td>
         <input value={driverPhone} onChange={(e) => setDriverPhone(e.target.value)} placeholder="기사 연락처" style={{ fontSize: 12, padding: 6, width: 130 }} />
       </td>
+      <td style={{ fontSize: 12 }}>
+        {pickup.vehiclePlate ?? "-"}
+        <br />
+        <span className="muted">
+          탑승 {pickup.vehicleSeats ?? "-"}명 / 요청 {pickup.passengers}명
+          {pickup.vehicleSeats && pickup.vehicleSeats < pickup.passengers ? " ⚠ 부족" : ""}
+        </span>
+      </td>
+      <td style={{ fontSize: 12 }}>{pickup.accepted ? "수락" : "미수락"}</td>
       <td>
         <button type="button" onClick={save} disabled={busy} className="button button-primary" style={{ padding: "6px 12px", fontSize: 12 }}>
           {busy ? "저장 중" : "저장"}

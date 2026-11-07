@@ -304,7 +304,7 @@ export default async function AdminPage({
         <thead>
           <tr>
             <th>여행자</th><th>국가</th><th>공항 / 항공편</th><th>도착 (현지)</th><th>인원 / 짐</th>
-            <th>픽업 장소</th><th>요금</th><th>상태</th><th>파트너</th><th>기사 이름</th><th>기사 연락처</th><th>저장</th>
+            <th>픽업 장소</th><th>요금</th><th>상태</th><th>파트너</th><th>기사 이름</th><th>기사 연락처</th><th>차량 / 탑승</th><th>수락</th><th>저장</th>
           </tr>
         </thead>
         <tbody>
@@ -330,6 +330,9 @@ export default async function AdminPage({
                   partnerId: p.partnerId,
                   driverName: p.driverName,
                   driverPhone: p.driverPhone,
+                  vehiclePlate: p.vehiclePlate,
+                  vehicleSeats: p.vehicleSeats,
+                  accepted: !!p.acceptedAt,
                 }}
                 partners={partners
                   .filter((x) => x.country === p.country)
